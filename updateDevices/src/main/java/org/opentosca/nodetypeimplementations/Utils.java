@@ -3,8 +3,6 @@ package org.opentosca.nodetypeimplementations;
 import org.apache.commons.codec.binary.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -21,7 +19,7 @@ import java.util.List;
 class Utils {
 	//TODO: set to container
 	private String host = "192.168.178.62";
-	private final Logger LOG = LoggerFactory.getLogger(Utils.class);
+	private final IALogger LOG = new IALogger(Utils.class);
 
 	/**
 	 * Creating the credentials for a HawkBit or Rollout instance
@@ -179,49 +177,16 @@ class Utils {
 
 		//set properties
 		LOG.debug("Setting Properties");
-		String propValues = "<Properties>";
+		StringBuilder propValues = new StringBuilder("<Properties>");
 		for(int i = 0; i < properties.size(); i++) {
-			propValues += "<" + properties.get(i) + ">" + propertiesValue.get(i) + "</" + properties.get(i) + ">";
+			propValues.append("<").append(properties.get(i)).append(">").append(propertiesValue.get(i)).append("</").append(properties.get(i)).append(">");
 		}
-		propValues += "</Properties>";
-		httpRequests(newInstance + "/properties/", propValues, "PUT", "application/xml");
+		propValues.append("</Properties>");
+		httpRequests(newInstance + "/properties/", propValues.toString(), "PUT", "application/xml");
 
 		//set state
 		LOG.debug("Setting the state");
 		httpRequests(newInstance + "/state/", "STARTED", "PUT", "text/plain");
-	}
-
-	/**
-	 * Making a HTTP GET request, getting an JSON Object back
-	 * @param requestURL the url to reques
-	 * @param authStringEnc the credentials for the basic http auth
-	 * @return a json object containing the result, or null
-	 */
-	JSONObject getHTTPRequestResponse(String requestURL, String authStringEnc) {
-		JSONObject response = null;
-		LOG.debug("Requesting URL: " + requestURL);
-		try {
-			URL url = new URL(requestURL);
-			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-			connection.setRequestProperty("Authorization", "Basic " + authStringEnc);
-			connection.setRequestMethod("GET");
-
-			InputStream content = connection.getInputStream();
-			BufferedReader in = new BufferedReader(new InputStreamReader(content));
-			String getResponse = "";
-			String line;
-			while ((line = in.readLine()) != null) {
-				getResponse += line;
-			}
-			if(getResponse.startsWith("{")){
-				response = new JSONObject(getResponse);
-			}
-			connection.disconnect();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return response;
-		}
-		return response;
 	}
 
 	/**
@@ -235,7 +200,7 @@ class Utils {
 	 */
 	private String httpRequests(final String host, final String requestBody, String httpMethod, String contenType) {
 		LOG.debug("Requesting URL: " + host + " with HTTP Method: " + httpMethod + " with ContentType: " + contenType + " and Body:" + requestBody);
-		String getResponse = "";
+		StringBuilder getResponse = new StringBuilder();
 		boolean escape = false;
 		try {
 			final URL url = new URL(host);
@@ -256,7 +221,7 @@ class Utils {
 			final BufferedReader in = new BufferedReader(new InputStreamReader(content));
 			String line;
 			while ((line = in.readLine()) != null) {
-				getResponse += line;
+				getResponse.append(line);
 			}
 			in.close();
 			connection.disconnect();
@@ -265,12 +230,12 @@ class Utils {
 			e.printStackTrace();
 		}
 		if(escape) {
-			getResponse = getResponse.replace("\"", "");
+			getResponse = new StringBuilder(getResponse.toString().replace("\"", ""));
 			LOG.debug("The Response of the Request is:" + getResponse);
-			return getResponse;
+			return getResponse.toString();
 		} else {
 			LOG.debug("The Response of the Request is:" + getResponse);
-			return getResponse;
+			return getResponse.toString();
 		}
 	}
 }

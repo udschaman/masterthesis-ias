@@ -6,20 +6,38 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+
+/**
+ * Class which will add a distribution set to a given device
+ */
 class AddDStoTarget {
 
-	int result;
+	private int result;
+	private final IALogger LOG = new IALogger(AddDStoTarget.class);
 
+	/**
+	 * Constructor which will update the give device with the given distribution set
+	 * @param controllerID the ID of the device we want to Update
+	 * @param distributionSetID the ID of the Distribution set with the Update
+	 * @param credentials the credentials to Rollout/HawkBit
+	 * @param host the URL of Rollout/HawkBit
+	 */
 	AddDStoTarget(String controllerID, String distributionSetID, String credentials, String host){
-
-		System.out.println("Adding DS: " + distributionSetID + " for device: " + controllerID);
+		LOG.debug("Adding DS: " + distributionSetID + " for device: " + controllerID);
 		addDStoTarget(controllerID, Integer.parseInt(distributionSetID), credentials, host);
-		System.out.println("Added DS: " + distributionSetID + " for device: " + controllerID + " with response: " + getResult());
-
+		LOG.debug("Added DS: " + distributionSetID + " for device: " + controllerID + " with response: " + getResult());
 	}
 
+	/**
+	 * Method which will update the give device with the given distribution set
+	 * @param controllerID the ID of the device we want to Update
+	 * @param distributionSetID the ID of the Distribution set with the Update
+	 * @param credentials the credentials to Rollout/HawkBit
+	 * @param host the URL of Rollout/HawkBit
+	 */
 	private void addDStoTarget(String controllerID, int distributionSetID, String credentials, String host){
 		try {
+			LOG.debug("Requesting: " + host + "/rest/v1/targets/" + controllerID + "/assignedDS");
 			URL url = new URL(host + "/rest/v1/targets/" + controllerID + "/assignedDS");
 			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 			connection.setRequestProperty("Authorization", "Basic " + credentials);
@@ -28,9 +46,9 @@ class AddDStoTarget {
 			connection.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
 			connection.setRequestMethod("POST");
 
+			//adding the id of the distribution set as body for the POST request on the device
 			JSONObject inputValues = new JSONObject();
 			inputValues.put("id", distributionSetID);
-
 			String message = inputValues.toString();
 
 			OutputStream os = connection.getOutputStream();
@@ -42,10 +60,14 @@ class AddDStoTarget {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
+		LOG.debug("The ResponseCode is: " + result);
 	}
 
-	public int getResult() {
+	/**
+	 * Getter for the result code
+	 * @return the result code of the update operation
+	 */
+	private int getResult() {
 		return result;
 	}
 }

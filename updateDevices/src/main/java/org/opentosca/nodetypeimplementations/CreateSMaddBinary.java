@@ -14,29 +14,47 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
-
+/**
+ * Class for creating a SoftwareModule in Rollout/HawkBit, downloading a File from a FileServer and Uploading that
+ * file to the SoftwareModule in Rollout/HawkBit
+ */
 class CreateSMaddBinary {
 
 	private String softwareModuleID = null;
+	private final IALogger LOG = new IALogger(CreateSMaddBinary.class);
 
+	/**
+	 * Constructor, which will automatically create a Software Module, download and upload the give file
+	 * @param credentials the credentials to Rollout/HawkBit
+	 * @param host the URL of Rollout/HawkBit
+	 * @param urlToBinary the URL to the Fileserver containing the file for the Rollout/Hawkbit Software Module
+	 * @param name the Name of the new creating SoftwareModule
+	 */
 	CreateSMaddBinary(String credentials, String host, String urlToBinary, String name){
-
-		System.out.println("Create Software Module");
+		LOG.debug("Create Software Module");
 		softwareModuleID = createSoftwareModule(name, credentials, host);
-		System.out.println("Created Software Module with id: " + softwareModuleID);
+		LOG.debug("Created Software Module with id: " + softwareModuleID);
 		if(softwareModuleID != null) {
-			System.out.println("Downloading binary");
+			LOG.debug("Downloading binary");
 			File newVersion = downloadBinary(urlToBinary);
-			System.out.println("Downloaded binary: " + newVersion.getName());
+			LOG.debug("Downloaded binary: " + newVersion.getName());
 			if(newVersion.exists()){
-				System.out.println("Uploading binary");
+				LOG.debug("Uploading binary");
 				int status = uploadBinary(newVersion, host, credentials);
-				System.out.println("Upload ended with: " + status);
-				newVersion.delete();
+				LOG.debug("Upload ended with: " + status);
+				boolean isDeleted = newVersion.delete();
+				LOG.debug("The file was deleted: " + isDeleted);
 			}
 		}
 	}
 
+	/**
+	 * Method to create a SoftwareModule in a give Rollout/HawkBit with given Name
+	 * @param name the name of the new Software Module
+	 * @param credentials the credentials to Rollout/HawkBit
+	 * @param host the URL of Rollout/HawkBit
+	 * @return the ID of the created SoftwareModule
+	 */
 	private String createSoftwareModule(String name, String credentials, String host){
 		String id = null;
 		JSONObject inputValues = new JSONObject();
@@ -51,6 +69,7 @@ class CreateSMaddBinary {
 		String message = input.toString();
 
 		try {
+			LOG.debug("Requesting: " + host + "/rest/v1/softwaremodules");
 			URL url = new URL(host + "/rest/v1/softwaremodules");
 			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 			connection.setRequestProperty("Authorization", "Basic " + credentials);
@@ -63,19 +82,17 @@ class CreateSMaddBinary {
 			os.write(message.getBytes("UTF-8"));
 			os.close();
 
-			System.out.println("Software Module Creation ended with :" + connection.getResponseCode());
+			LOG.debug("Software Module Creation ended with :" + connection.getResponseCode());
 			if (connection.getResponseCode() == 201){
-				String getResponse = "";
-
+				StringBuilder getResponse = new StringBuilder();
 				InputStream content = connection.getInputStream();
 				BufferedReader in =	new BufferedReader (new InputStreamReader(content));
 				String line;
 				while ((line = in.readLine()) != null) {
-					getResponse += line;
+					getResponse.append(line);
 				}
 				in.close();
-				JSONArray response = new JSONArray(getResponse);
-
+				JSONArray response = new JSONArray(getResponse.toString());
 				id = Integer.toString(response.getJSONObject(0).getInt("id"));
 			}
 			connection.disconnect();
@@ -85,9 +102,14 @@ class CreateSMaddBinary {
 		return id;
 	}
 
+	/**
+	 * Downloads a File from a given URL and return it
+	 * @param urlToBinary the URL to the File to download
+	 * @return the Downloaded file
+	 */
 	private File downloadBinary(String urlToBinary){
 		File downloadedFile = new File(urlToBinary.split("/")[urlToBinary.split("/").length - 1]);
-		System.out.println("URL to request is: " + urlToBinary);
+		LOG.debug("URL to request is: " + urlToBinary);
 		try {
 			URL website = new URL(urlToBinary);
 			ReadableByteChannel rbc = Channels.newChannel(website.openStream());
@@ -100,6 +122,13 @@ class CreateSMaddBinary {
 		return downloadedFile;
 	}
 
+	/**
+	 * Uploads a File to a given SoftwareModule in Rollout/Hawkbit
+	 * @param newVersion the File containing the new Update
+	 * @param host the URL of Rollout/HawkBit
+	 * @param credentials the credentials to Rollout/HawkBit
+	 * @return  the HTTP response code of the upload-POST-request
+	 */
 	private int uploadBinary(File newVersion, String host, String credentials){
 		int result = 0;
 		try {
@@ -113,20 +142,22 @@ class CreateSMaddBinary {
 
 			MultipartEntity reqEntity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE, "----SomeRandomText", Charset.defaultCharset());
 			ContentBody contentPart = new FileBody(newVersion);
-
 			reqEntity.addPart("file", contentPart);
 			reqEntity.writeTo(connection.getOutputStream());
 			connection.disconnect();
 
 			result = connection.getResponseCode();
-			System.out.println("Upload Binary ended with: " + result);
-
+			LOG.debug("Upload Binary ended with: " + result);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return result;
 	}
 
+	/**
+	 * Getter for the SoftwareModuleID
+	 * @return the ID of the SoftwareModule
+	 */
 	String getSoftwareModuleID() {
 		return softwareModuleID;
 	}

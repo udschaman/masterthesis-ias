@@ -4,8 +4,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import javax.jws.Oneway;
 import javax.jws.WebMethod;
 import javax.jws.WebParam;
@@ -19,7 +17,7 @@ import javax.jws.soap.SOAPBinding;
 @WebService
 public class org_opentosca_nodetypes_BoschOTARequestDevice_w1_wip1__org_opentosca_interfaces_lifecycle extends AbstractIAService {
 
-	final Logger LOG = LoggerFactory.getLogger(org_opentosca_nodetypes_BoschOTARequestDevice_w1_wip1__org_opentosca_interfaces_lifecycle.class);
+	private final IALogger LOG = new IALogger(org_opentosca_nodetypes_BoschOTARequestDevice_w1_wip1__org_opentosca_interfaces_lifecycle.class);
 
 	/**
 	 * The install operation for the OTA-Manager
@@ -96,7 +94,7 @@ public class org_opentosca_nodetypes_BoschOTARequestDevice_w1_wip1__org_opentosc
 					//we do the other values per API call
 					String nodetemplates = utils.getNodetemplates(csar, servicetemplate, "Distribution");
 					utils.createInstance(csar, servicetemplate, nodetemplates, instanceID,
-							Arrays.asList("distributionSet"), Arrays.asList(resultID));
+							Collections.singletonList("distributionSet"), Collections.singletonList(resultID));
 				}
 			}
 		} else {

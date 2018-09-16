@@ -9,22 +9,36 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.HashMap;
 
+/**
+ * Class to create a new Distribution Set and add a SoftwareModule to it
+ */
 class CreateDSaddSM {
 
 	private int distributionSetID;
+	private final IALogger LOG = new IALogger(CreateDSaddSM.class);
 
+	/**
+	 * Constructor which will create an Distribution Set and add a SotwareModule to it
+	 * @param softwareModuleID the ID of the SoftwareModule, that should be added to a DS
+	 * @param credentials the credentials to Rollout/HawkBit
+	 * @param host the URL of Rollout/HawkBit
+	 * @param DS_name the name of the new Distribution Set
+	 */
 	CreateDSaddSM(String softwareModuleID, String credentials, String host, String DS_name) {
-
-		System.out.println("Creating distribution set");
+		LOG.debug("Creating distribution set");
 		createDSandAddSM(softwareModuleID, host, credentials, DS_name);
-		System.out.println("Created distribution set: " + distributionSetID);
-
+		LOG.debug("Created distribution set: " + distributionSetID);
 	}
 
+	/**
+	 * Method which will create the Distribution Set and add the Software Module
+	 * @param softwareModuleID the ID of the SoftwareModule, that should be added to a DS
+	 * @param host the URL of Rollout/HawkBit
+	 * @param credentials the credentials to Rollout/HawkBit
+	 * @param DS_name the name of the new Distribution Set
+	 */
 	private void createDSandAddSM(String softwareModuleID, String host, String credentials, String DS_name) {
-
 		JSONObject inputValues = new JSONObject();
 		inputValues.put("type", "os");
 		inputValues.put("name", DS_name);
@@ -42,6 +56,7 @@ class CreateDSaddSM {
 		String message = input.toString();
 
 		try {
+			LOG.debug("Requesting: " + host + "/rest/v1/distributionsets");
 			URL url = new URL(host + "/rest/v1/distributionsets");
 			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 			connection.setRequestProperty("Authorization", "Basic " + credentials);
@@ -54,17 +69,17 @@ class CreateDSaddSM {
 			os.write(message.getBytes("UTF-8"));
 			os.close();
 
+			LOG.debug("Response was: " + connection.getResponseCode());
 			if (connection.getResponseCode() == 201) {
-				String getResponse = "";
-
+				StringBuilder getResponse = new StringBuilder();
 				InputStream content = connection.getInputStream();
 				BufferedReader in = new BufferedReader(new InputStreamReader(content));
 				String line;
 				while ((line = in.readLine()) != null) {
-					getResponse += line;
+					getResponse.append(line);
 				}
 				in.close();
-				JSONArray response = new JSONArray(getResponse);
+				JSONArray response = new JSONArray(getResponse.toString());
 
 				distributionSetID = response.getJSONObject(0).getInt("id");
 			}
@@ -72,8 +87,13 @@ class CreateDSaddSM {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		LOG.debug("distributionSetID is: " + distributionSetID);
 	}
 
+	/**
+	 * Getter for the distributionSetID
+	 * @return the ID of the distribution set
+	 */
 	public int getDistributionSetID() {
 		return distributionSetID;
 	}
