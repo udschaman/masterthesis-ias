@@ -5,6 +5,7 @@ import javax.jws.WebMethod;
 import javax.jws.WebParam;
 import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
+import java.util.Arrays;
 
 @WebService
 public class org_opentosca_nodetypes_BoschOTAUpdateDevice__org_opentosca_iot_interfaces_devicemanagement extends AbstractIAService {
@@ -37,7 +38,8 @@ public class org_opentosca_nodetypes_BoschOTAUpdateDevice__org_opentosca_iot_int
 			String instanceID = utils.getInstanceID(csar, servicetemplate);
 
 			String nodetemplates = utils.getNodetemplates(csar, servicetemplate, "Distribution");
-			utils.createInstance(csar, servicetemplate, nodetemplates, utils, instanceID, "distributionSet", Integer.toString(creation.getDistributionSetID()));
+			utils.createInstance(csar, servicetemplate, nodetemplates, utils, instanceID,
+					Arrays.asList("distributionSet"), Arrays.asList(Integer.toString(creation.getDistributionSetID())));
 		}
 	}
 

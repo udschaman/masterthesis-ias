@@ -1,22 +1,33 @@
 package org.opentosca.nodetypeimplementations;
 
-import com.sun.org.apache.xpath.internal.SourceTree;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.*;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javax.jws.Oneway;
 import javax.jws.WebMethod;
 import javax.jws.WebParam;
 import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
 
+/**
+ * Implementing the Install Operation for the BoschOTA-Manager
+ * Requesting all Devices and Distribution Sets from the OTA-Manager and creating OpenTOSCA-Container instances of it
+ */
 @WebService
 public class org_opentosca_nodetypes_BoschOTARequestDevice_w1_wip1__org_opentosca_interfaces_lifecycle extends AbstractIAService {
 
-	//TODO show for each device its assigned DS
+	final Logger LOG = LoggerFactory.getLogger(org_opentosca_nodetypes_BoschOTARequestDevice_w1_wip1__org_opentosca_interfaces_lifecycle.class);
 
+	/**
+	 * The install operation for the OTA-Manager
+	 * @param tenant the tenant of the OTA manager
+	 * @param user the user of the OTA manager
+	 * @param password the password of the OTA manager
+	 * @param host the host of the OTA manager
+	 */
 	@WebMethod
 	@SOAPBinding
 	@Oneway
@@ -28,27 +39,43 @@ public class org_opentosca_nodetypes_BoschOTARequestDevice_w1_wip1__org_opentosc
 	) {
 		// This HashMap holds the return parameters of this operation.
 		final HashMap<String, String> returnParameters = new HashMap<String, String>();
-
+		LOG.debug("Starting install operation");
 		Utils utils = new Utils();
 		//http basic auth
 		String credentials = utils.createCredentials(tenant, user, password);
 
-		String csar = "";//utils.getCSAR();
-		String servicetemplate = "";//utils.getServiceTemplate(csar);
-		String instanceID = "";//utils.getInstanceID(csar, servicetemplate);
-
+		//creating parameters for the instance creation in OpenTOSCA
+		String csar = utils.getCSAR();
+		LOG.debug("Using CSAR: " + csar);
+		String servicetemplate = utils.getServiceTemplate(csar);
+		LOG.debug("Usind ServiceTemplate: " + servicetemplate);
+		String instanceID = utils.getInstanceID(csar, servicetemplate);
+		LOG.debug("Usind InstanceID: " + instanceID);
 		host = utils.generateHost(host);
+		LOG.debug("Using Host: " + host);
+
+		LOG.debug("Start loading devices");
 		getDevices(host, credentials, utils, csar, servicetemplate, instanceID).forEach(returnParameters::putIfAbsent);
+		LOG.debug("Finished loading devices");
 
-
-		System.exit(1);
-
-
-
+		LOG.debug("Start loading distribution sets");
 		getDistributionSets(host, credentials, utils, csar, servicetemplate, instanceID).forEach(returnParameters::putIfAbsent);
+		LOG.debug("Finished loading distribution sets");
+
 		sendResponse(returnParameters);
+		LOG.debug("Finished install operation");
 	}
 
+	/**
+	 * Requesting all Distribution Sets from the OTA-Manager and creating OpenTOSCA container instances of it
+	 * @param host the host of the OTA manager
+	 * @param authStringEnc the basic http auth values
+	 * @param utils a util class
+ 	 * @param csar the csar for the distribution set instance creation
+	 * @param servicetemplate the servicetemplate for the distribution set instance creation
+	 * @param instanceID the instanceID for the distribution set instance creation
+	 * @return a Map of values (well only one value...) with one distribution set id value
+	 */
 	private HashMap<String, String> getDistributionSets(String host, String authStringEnc, Utils utils, String csar, String servicetemplate, String instanceID) {
 		final HashMap<String, String> returnParameters = new HashMap<>();
 		//request devices
@@ -61,11 +88,14 @@ public class org_opentosca_nodetypes_BoschOTARequestDevice_w1_wip1__org_opentosc
 			for (int i = 0; i < size; i++) {
 				JSONObject element = devices.getJSONObject(i);
 				String resultID = Integer.toString(element.getInt("id"));
+				LOG.debug("Using Distribution Set with ID: " + resultID);
 				if(i == 0){
+					//as we just can return one value to OpenTOSCA
 					returnParameters.put("distributionSet", resultID);
 				} else {
+					//we do the other values per API call
 					String nodetemplates = utils.getNodetemplates(csar, servicetemplate, "Distribution");
-					utils.createInstance(csar, servicetemplate, nodetemplates, utils, instanceID,
+					utils.createInstance(csar, servicetemplate, nodetemplates, instanceID,
 							Arrays.asList("distributionSet"), Arrays.asList(resultID));
 				}
 			}
@@ -75,6 +105,16 @@ public class org_opentosca_nodetypes_BoschOTARequestDevice_w1_wip1__org_opentosc
 		return returnParameters;
 	}
 
+	/**
+	 * Requesting all devices from the OTA-Manager and creating OpenTOSCA container instances of it
+	 * @param host the host of the OTA manager
+	 * @param authStringEnc the basic http auth values
+	 * @param utils a util class
+	 * @param csar the csar for the device instance creation
+	 * @param servicetemplate the servicetemplate for the device instance creation
+	 * @param instanceID the instanceID for the device instance creation
+	 * @return a Map of values (well only one value...) with one device id value
+	 */
 	private HashMap<String, String> getDevices(String host, String authStringEnc, Utils utils, String csar, String servicetemplate, String instanceID) {
 		final HashMap<String, String> returnParameters = new HashMap<>();
 		//request devices
@@ -89,16 +129,20 @@ public class org_opentosca_nodetypes_BoschOTARequestDevice_w1_wip1__org_opentosc
 				String resultID = element.getString("controllerId");
 
 				JSONObject assignedDS = utils.getHTTPRequestResponse(requestURL + "/" + resultID + "/assignedDS", authStringEnc);
-				String deviceDS = "";
+				String deviceDS = "No DS assigned";
 				if(assignedDS != null) {
 					deviceDS = Integer.toString(assignedDS.getInt("id"));
 				}
+
+				LOG.debug("Usind Device with ID: " + resultID + " and assignedDS: " + assignedDS);
 				if(i == 0){
+					//as we just can return one value to OpenTOSCA
 					returnParameters.put("deviceID", resultID);
 					returnParameters.put("assignedDS", deviceDS);
 				} else {
+					//we do the other values per API call
 					String nodetemplates = utils.getNodetemplates(csar, servicetemplate, "Device");
-					utils.createInstance(csar, servicetemplate, nodetemplates, utils, instanceID,
+					utils.createInstance(csar, servicetemplate, nodetemplates, instanceID,
 							Arrays.asList("deviceID", "assignedDS"), Arrays.asList(resultID, deviceDS));
 				}
 			}
