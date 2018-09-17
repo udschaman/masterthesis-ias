@@ -5,7 +5,7 @@ import javax.jws.WebMethod;
 import javax.jws.WebParam;
 import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
-import java.util.Collections;
+import java.util.*;
 
 
 /**
@@ -15,7 +15,6 @@ import java.util.Collections;
 @WebService
 public class org_opentosca_nodetypes_BoschOTAUpdateDevice__org_opentosca_iot_interfaces_devicemanagement extends AbstractIAService {
 
-	//TODO: Update Device-assignedDS in TOSCA
 	private final IALogger LOG = new IALogger(org_opentosca_nodetypes_BoschOTAUpdateDevice__org_opentosca_iot_interfaces_devicemanagement.class);
 
 	/**
@@ -92,6 +91,32 @@ public class org_opentosca_nodetypes_BoschOTAUpdateDevice__org_opentosca_iot_int
 		host = utils.generateHost(host);
 
 		AddDStoTarget addDStoTarget = new AddDStoTarget(deviceName, distributionSetName, credentials, host);
+
+		//creating parameters for the instance creation in OpenTOSCA
+		String csar = utils.getCSAR();
+		LOG.debug("Using CSAR: " + csar);
+		String servicetemplate = utils.getServiceTemplate(csar);
+		LOG.debug("Usind ServiceTemplate: " + servicetemplate);
+		String nodeTemplate = utils.getNodetemplates(csar, servicetemplate, "Device");
+		LOG.debug("Using NodeTemplate: " + nodeTemplate);
+		String baseHost = "http://" + utils.getHost() + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate
+				+ "/nodetemplates/" + nodeTemplate + "/instances/";
+		LOG.debug("Using " + "http://" + utils.getHost() + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate
+				+ "/nodetemplates/" + nodeTemplate + "/instances/" + " as URL for updating Instance properties");
+		String nodeTemplateID = utils.getInstanceIDbyPropery(baseHost, deviceName);
+		LOG.debug("Using NodeTemplateInstanceID: " + nodeTemplateID);
+
+		List<String> properties = Arrays.asList("deviceID", "assignedDS");
+		List<String> propertiesValue = Arrays.asList(deviceName, distributionSetName);
+
+		LOG.debug("Setting Properties");
+		StringBuilder propValues = new StringBuilder("<Properties>");
+		for(int i = 0; i < properties.size(); i++) {
+			propValues.append("<").append(properties.get(i)).append(">").append(propertiesValue.get(i)).append("</").append(properties.get(i)).append(">");
+		}
+		propValues.append("</Properties>");
+		utils.httpRequests(baseHost + nodeTemplateID + "/properties/", propValues.toString(), "PUT", "application/xml");
+
 		LOG.debug("Ended updateDevice");
 	}
 }

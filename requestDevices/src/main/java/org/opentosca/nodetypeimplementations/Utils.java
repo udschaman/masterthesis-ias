@@ -3,13 +3,17 @@ package org.opentosca.nodetypeimplementations;
 import org.apache.commons.codec.binary.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -18,9 +22,8 @@ import java.util.List;
  */
 class Utils {
 	//TODO: set to container
-	private String host = "192.168.178.62";
+	private String host = "141.58.61.244";
 	private final IALogger LOG = new IALogger(Utils.class);
-
 	/**
 	 * Creating the credentials for a HawkBit or Rollout instance
 	 * @param tenant the tenant of the Rollout instance or empty is HawkBit instance
@@ -65,15 +68,15 @@ class Utils {
 	String getCSAR(){
 		JSONArray csars = new JSONObject(httpRequests("http://" + host + ":1337/csars/", "", "GET", "application/json")).getJSONArray("csars");
 		LOG.debug("Requesting CSARs from: " + "http://" + host + ":1337/csars/");
-		 for (int i = 0; i < csars.length(); i++){
-		 	String boschOTA = csars.getJSONObject(i).getString("id");
-		 	LOG.debug("Got CSAR: " + boschOTA);
-		 	if(boschOTA.contains("BoschOTA")){
-		 		LOG.debug("Using OTA-CSAR: " + boschOTA);
-		 		return boschOTA;
+		for (int i = 0; i < csars.length(); i++){
+			String boschOTA = csars.getJSONObject(i).getString("id");
+			LOG.debug("Got CSAR: " + boschOTA);
+			if(boschOTA.contains("BoschOTA")){
+				LOG.debug("Using OTA-CSAR: " + boschOTA);
+				return boschOTA;
 			}
-		 }
-		 LOG.debug("No CSAR implementing BoschOTA was found");
+		}
+		LOG.debug("No CSAR implementing BoschOTA was found");
 		return null;
 	}
 
@@ -101,7 +104,7 @@ class Utils {
 	}
 
 	/**
-	 * Request all NodeType from a given csar, servicetemplate and node type
+	 * Request a NodeTemplate from a given csar, servicetemplate and node type
 	 * @param csar the csar to search in
 	 * @param servicetemplate the service template to search in
 	 * @param nodeType the nodetype to find templates for
@@ -190,39 +193,6 @@ class Utils {
 	}
 
 	/**
-	 * Making a HTTP GET request, getting an JSON Object back
-	 * @param requestURL the url to reques
-	 * @param authStringEnc the credentials for the basic http auth
-	 * @return a json object containing the result, or null
-	 */
-	JSONObject getHTTPRequestResponse(String requestURL, String authStringEnc) {
-		JSONObject response = null;
-		LOG.debug("Requesting URL: " + requestURL);
-		try {
-			URL url = new URL(requestURL);
-			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-			connection.setRequestProperty("Authorization", "Basic " + authStringEnc);
-			connection.setRequestMethod("GET");
-
-			InputStream content = connection.getInputStream();
-			BufferedReader in = new BufferedReader(new InputStreamReader(content));
-			StringBuilder getResponse = new StringBuilder();
-			String line;
-			while ((line = in.readLine()) != null) {
-				getResponse.append(line);
-			}
-			if(getResponse.toString().startsWith("{")){
-				response = new JSONObject(getResponse.toString());
-			}
-			connection.disconnect();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return response;
-		}
-		return response;
-	}
-
-	/**
 	 * Making a HTTP request for a given HTTP verb, getting an response message back.
 	 * For not GET verbs we need to escape the message properly
 	 * @param host the host for the request
@@ -231,7 +201,7 @@ class Utils {
 	 * @param contenType the contentype of the request
 	 * @return the respose of the http request as string (escaped if it is a not GET)
 	 */
-	private String httpRequests(final String host, final String requestBody, String httpMethod, String contenType) {
+	String httpRequests(final String host, final String requestBody, String httpMethod, String contenType) {
 		LOG.debug("Requesting URL: " + host + " with HTTP Method: " + httpMethod + " with ContentType: " + contenType + " and Body:" + requestBody);
 		StringBuilder getResponse = new StringBuilder();
 		boolean escape = false;
@@ -270,5 +240,91 @@ class Utils {
 			LOG.debug("The Response of the Request is:" + getResponse);
 			return getResponse.toString();
 		}
+	}
+
+	/**
+	 * Making a HTTP GET request, getting an JSON Object back
+	 * @param requestURL the url to reques
+	 * @param authStringEnc the credentials for the basic http auth
+	 * @return a json object containing the result, or null
+	 */
+	JSONObject getHTTPRequestResponse(String requestURL, String authStringEnc) {
+		JSONObject response = null;
+		LOG.debug("Requesting URL: " + requestURL);
+		try {
+			URL url = new URL(requestURL);
+			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+			connection.setRequestProperty("Authorization", "Basic " + authStringEnc);
+			connection.setRequestMethod("GET");
+
+			InputStream content = connection.getInputStream();
+			BufferedReader in = new BufferedReader(new InputStreamReader(content));
+			StringBuilder getResponse = new StringBuilder();
+			String line;
+			while ((line = in.readLine()) != null) {
+				getResponse.append(line);
+			}
+			if(getResponse.toString().startsWith("{")){
+				response = new JSONObject(getResponse.toString());
+			}
+			connection.disconnect();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return response;
+		}
+		return response;
+	}
+
+	/**
+	 * Requests all registered Devices in OpenTOSCA container and searches the TOSCA-Conainer ID for a given property value
+	 * @param host the url to the OpenTOSCA container
+	 * @param deviceName the name of the device we want to update
+	 * @return the OpenTOSCA container ID we want to update
+	 */
+	String getInstanceIDbyPropery(String host, String deviceName){
+		JSONObject instanceList = getHTTPRequestResponse(host, "user:password");
+		JSONArray instances = instanceList.getJSONArray("node_template_instances");
+		String id = null;
+
+		for(int i = 0; i < instances.length(); i++){
+			String url = instances.getJSONObject(i).getJSONObject("_links").getJSONObject("self").getString("href");
+			url = url + "/properties/";
+			String property = httpRequests(url, "", "GET", "application/xml");
+			Document xmlProperties = loadXMLFromString(property);
+			try {
+				String deviceID = xmlProperties.getElementsByTagName("deviceID").item(0).getFirstChild().getNodeValue();
+				if (deviceID.equals(deviceName)) {
+					id = Integer.toString(instances.getJSONObject(i).getInt("id"));
+				}
+			} catch (NullPointerException e){
+				e.printStackTrace();
+			}
+		}
+		return id;
+	}
+
+	/**
+	 * XML Document creator from a given xml string
+	 * @param xml the xml as string to create a DOM-document
+	 * @return a DOM-document created by the xml in the string
+	 */
+	private Document loadXMLFromString(String xml){
+		try {
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder builder = factory.newDocumentBuilder();
+			InputSource is = new InputSource(new StringReader(xml));
+			return builder.parse(is);
+		}catch (ParserConfigurationException | IOException | SAXException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	/**
+	 * Getter for the host
+	 * @return the host
+	 */
+	String getHost() {
+		return host;
 	}
 }

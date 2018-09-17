@@ -46,7 +46,11 @@
 
     <dependencies>
         <!-- LIBRARIES ADDED FOR IMPLEMENTATION ARTIFACT IMPLEMENTATION -->
-
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+            <version>2.4.0-b180725.0644</version>
+        </dependency>
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
