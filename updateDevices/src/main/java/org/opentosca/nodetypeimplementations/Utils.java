@@ -22,7 +22,7 @@ import java.util.List;
  */
 class Utils {
 	//TODO: set to container
-	private String host = "141.58.61.244";
+	private String host = "141.58.43.61";
 	private final IALogger LOG = new IALogger(Utils.class);
 	/**
 	 * Creating the credentials for a HawkBit or Rollout instance

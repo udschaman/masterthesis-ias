@@ -18,10 +18,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.opentosca.nodetypeimplementations</groupId>
-    <artifactId>org_opentosca_nodetypes_BoschOTAUpdateDevice__org_opentosca_iot_interfaces_devicemanagement</artifactId>
+    <artifactId>org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binaries</artifactId>
     <packaging>war</packaging>
     <version>1.0-SNAPSHOT</version>
-    <name>Implementation Artifact org_opentosca_nodetypes_BoschOTAUpdateDevice__org_opentosca_iot_interfaces_devicemanagement</name>
+    <name>Implementation Artifact org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binaries</name>
 
     <repositories>
         <repository>
@@ -36,7 +36,7 @@
 
     <properties>
         <run.HttpPort>9090</run.HttpPort>
-        <winery.upload.url>http://localhost:8080/winery/artifacttemplates/http%253A%252F%252Fopentosca.org%252Fartifacttemplates/Bosch-OTA-Request-Update-IA/files</winery.upload.url>
+        <winery.upload.url>http://localhost:8080/winery/artifacttemplates/http%253A%252F%252Fopentosca.org%252Fartifacttemplates/BoschOTAManager-UploadBinary-IA/files</winery.upload.url>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -55,6 +55,12 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpmime</artifactId>
             <version>4.2.1</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.sun.xml.bind/jaxb-core -->
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-core</artifactId>
+            <version>2.3.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.sun.xml.bind</groupId>
@@ -102,7 +108,7 @@
     </dependencies>
 
     <build>
-        <finalName>org_opentosca_nodetypes_BoschOTAUpdateDevice__org_opentosca_iot_interfaces_devicemanagement</finalName>
+        <finalName>org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binaries</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -139,8 +145,8 @@
                         <id>process-classes</id>
                         <phase>process-classes</phase>
                         <configuration>
-                            <className>org.opentosca.nodetypeimplementations.org_opentosca_nodetypes_BoschOTAUpdateDevice__org_opentosca_iot_interfaces_devicemanagement</className>
-                            <outputFile>${basedir}/src/main/webapp/wsdl/org_opentosca_nodetypes_BoschOTAUpdateDevice__org_opentosca_iot_interfaces_devicemanagement.wsdl</outputFile>
+                            <className>org.opentosca.nodetypeimplementations.org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binaries</className>
+                            <outputFile>${basedir}/src/main/webapp/wsdl/org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binaries.wsdl</outputFile>
                             <genWsdl>true</genWsdl>
                             <verbose>true</verbose>
                         </configuration>

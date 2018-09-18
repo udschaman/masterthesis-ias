@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binariesService" targetNamespace="http://nodetypeimplementations.opentosca.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://nodetypeimplementations.opentosca.org/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+  <wsdl:types>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://nodetypeimplementations.opentosca.org/" elementFormDefault="unqualified" targetNamespace="http://nodetypeimplementations.opentosca.org/" version="1.0">
+<xs:element name="uploadBinary" type="tns:uploadBinary"/>
+<xs:complexType name="uploadBinary">
+    <xs:sequence>
+      <xs:element form="qualified" minOccurs="0" name="tenant" type="xs:string"/>
+      <xs:element form="qualified" minOccurs="0" name="user" type="xs:string"/>
+      <xs:element form="qualified" minOccurs="0" name="password" type="xs:string"/>
+      <xs:element form="qualified" minOccurs="0" name="host" type="xs:string"/>
+      <xs:element form="qualified" minOccurs="0" name="urlToBinary" type="xs:string"/>
+      <xs:element form="qualified" minOccurs="0" name="distributionSetName" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>
+  </wsdl:types>
+  <wsdl:message name="uploadBinary">
+    <wsdl:part name="parameters" element="tns:uploadBinary">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binaries">
+    <wsdl:operation name="uploadBinary">
+      <wsdl:input name="uploadBinary" message="tns:uploadBinary">
+    </wsdl:input>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binariesServiceSoapBinding" type="tns:org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binaries">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="uploadBinary">
+      <soap:operation soapAction="" style="document"/>
+      <wsdl:input name="uploadBinary">
+        <soap:body use="literal"/>
+      </wsdl:input>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binariesService">
+    <wsdl:port name="org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binariesPort" binding="tns:org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binariesServiceSoapBinding">
+      <soap:address location="http://localhost:9090/org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binariesPort"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

@@ -13,7 +13,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -86,8 +85,8 @@ class Utils {
 	 * @return the proper BoschOTA ServiceTemplate if found, else null
 	 */
 	String getServiceTemplate(String csar){
-		JSONObject requestResult = new JSONObject(httpRequests("http://" + host + ":1337/csars/" + csar + "/servicetemplates/", "", "GET", "application/json"));
 		LOG.debug("Requesting ServiceTemplates from: " + "http://" + host + ":1337/csars/" + csar + "/servicetemplates/");
+		JSONObject requestResult = new JSONObject(httpRequests("http://" + host + ":1337/csars/" + csar + "/servicetemplates/", "", "GET", "application/json"));
 		JSONArray links = requestResult.getJSONArray("service_templates");
 
 		for (int i = 0; i < links.length(); i++){
@@ -111,9 +110,9 @@ class Utils {
 	 * @return the nodetemplate of the given nodetype if found, else null
 	 */
 	String getNodetemplates(String csar, String servicetemplate, String nodeType) {
+		LOG.debug("Requesting NodeTemplates from: " + "http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate + "/nodetemplates/");
 		JSONObject requestResult = new JSONObject(httpRequests("http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate + "/nodetemplates/"
 				, "", "GET", "application/json"));
-		LOG.debug("Requesting NodeTemplates from: " + "http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate + "/nodetemplates/");
 		JSONArray nodeTemplates = requestResult.getJSONArray("node_templates");
 
 		for(int i = 0; i < nodeTemplates.length(); i++){
@@ -135,10 +134,11 @@ class Utils {
 	 * @return the id of the newest service template if one found, else null
 	 */
 	String getInstanceID(String csar, String servicetemplate){
+		LOG.debug("Requesting ServiceTemplateInstances from " + "http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate + "/instances/");
 		JSONObject requestResult = new JSONObject(httpRequests("http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate + "/instances/"
 				, "", "GET", "application/json"));
-		LOG.debug("Requesting ServiceTemplateInstances from " + "http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate + "/instances/");
 		JSONArray instances =  requestResult.getJSONArray("service_template_instances");
+
 		Integer instanceID = null;
 		long timestamp = 0L;
 
@@ -148,12 +148,15 @@ class Utils {
 			long instanceTimestamp = instance.getLong("created_at");
 			String instanceState = instance.getString("state");
 			int tempInstanceID = instance.getInt("id");
-			if(instanceState.equals("CREATING") && instanceTimestamp > timestamp){
+			if(instanceState.equals("CREATED") && instanceTimestamp > timestamp){
 				timestamp = instanceTimestamp;
 				instanceID = tempInstanceID;
 			}
 		}
-		String response = instanceID == null ? null : Integer.toString(instanceID);
+		String response = null;
+		if(instanceID != null){
+			response = Integer.toString(instanceID);
+		}
 		LOG.debug("Using ServceTemplateInstance with ID: " + response);
 		return response;
 	}
