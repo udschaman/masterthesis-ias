@@ -89,8 +89,8 @@ class Utils {
 	 * @return the proper BoschOTA ServiceTemplate if found, else null
 	 */
 	String getServiceTemplate(String csar){
-		LOG.debug("Requesting ServiceTemplates from: " + "http://" + host + ":1337/csars/" + csar + "/servicetemplates/");
 		JSONObject requestResult = new JSONObject(httpRequests("http://" + host + ":1337/csars/" + csar + "/servicetemplates/", "", "GET", "application/json"));
+		LOG.debug("Requesting ServiceTemplates from: " + "http://" + host + ":1337/csars/" + csar + "/servicetemplates/");
 		JSONArray links = requestResult.getJSONArray("service_templates");
 
 		for (int i = 0; i < links.length(); i++){
@@ -114,9 +114,9 @@ class Utils {
 	 * @return the nodetemplate of the given nodetype if found, else null
 	 */
 	String getNodetemplates(String csar, String servicetemplate, String nodeType) {
-		LOG.debug("Requesting NodeTemplates from: " + "http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate + "/nodetemplates/");
 		JSONObject requestResult = new JSONObject(httpRequests("http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate + "/nodetemplates/"
 				, "", "GET", "application/json"));
+		LOG.debug("Requesting NodeTemplates from: " + "http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate + "/nodetemplates/");
 		JSONArray nodeTemplates = requestResult.getJSONArray("node_templates");
 
 		for(int i = 0; i < nodeTemplates.length(); i++){
@@ -138,11 +138,10 @@ class Utils {
 	 * @return the id of the newest service template if one found, else null
 	 */
 	String getInstanceID(String csar, String servicetemplate){
-		LOG.debug("Requesting ServiceTemplateInstances from " + "http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate + "/instances/");
 		JSONObject requestResult = new JSONObject(httpRequests("http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate + "/instances/"
 				, "", "GET", "application/json"));
+		LOG.debug("Requesting ServiceTemplateInstances from " + "http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate + "/instances/");
 		JSONArray instances =  requestResult.getJSONArray("service_template_instances");
-
 		Integer instanceID = null;
 		long timestamp = 0L;
 
@@ -157,10 +156,7 @@ class Utils {
 				instanceID = tempInstanceID;
 			}
 		}
-		String response = null;
-		if(instanceID != null){
-			response = Integer.toString(instanceID);
-		}
+		String response = instanceID == null ? null : Integer.toString(instanceID);
 		LOG.debug("Using ServceTemplateInstance with ID: " + response);
 		return response;
 	}
@@ -178,8 +174,7 @@ class Utils {
 	void createInstance(String csar, String servicetemplate, String nodetemplates, String instanceID, List<String> properties, List<String> propertiesValue){
 		String baseHost = "http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate
 				+ "/nodetemplates/" + nodetemplates + "/instances/";
-		LOG.debug("Using " + "http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate
-				+ "/nodetemplates/" + nodetemplates + "/instances/" + " as URL for creating Instances");
+		LOG.debug("Using " + baseHost + " as URL for creating Instances");
 
 		//create Instance
 		LOG.debug("Creating Instances");
@@ -247,6 +242,115 @@ class Utils {
 			LOG.debug("The Response of the Request is:" + getResponse);
 			return getResponse.toString();
 		}
+	}
+
+	/**
+	 * Making a HTTP GET request, getting an JSON Object back
+	 * @param requestURL the url to reques
+	 * @param authStringEnc the credentials for the basic http auth
+	 * @return a json object containing the result, or null
+	 */
+	JSONObject getHTTPRequestResponse(String requestURL, String authStringEnc) {
+		JSONObject response = null;
+		LOG.debug("Requesting URL: " + requestURL);
+		try {
+			URL url = new URL(requestURL);
+			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+			connection.setRequestProperty("Authorization", "Basic " + authStringEnc);
+			connection.setRequestMethod("GET");
+
+			InputStream content = connection.getInputStream();
+			BufferedReader in = new BufferedReader(new InputStreamReader(content));
+			StringBuilder getResponse = new StringBuilder();
+			String line;
+			while ((line = in.readLine()) != null) {
+				getResponse.append(line);
+			}
+			if(getResponse.toString().startsWith("{")){
+				response = new JSONObject(getResponse.toString());
+			}
+			connection.disconnect();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return response;
+		}
+		return response;
+	}
+
+	/**
+	 * Requests all registered instances in OpenTOSCA container and searches the TOSCA-Conainer ID for a given property value
+	 * @param host the url to the OpenTOSCA container
+	 * @param propertyName the name of the instance we want to update
+	 * @param propertyTag the tag of the property we want to search for
+	 * @return the OpenTOSCA container ID we want to update
+	 */
+	String getInstanceIDbyProperty(String host, String propertyName, String propertyTag){
+		JSONArray instances = getAllInstancesOfOneNodeTemplate(host);
+		String id = null;
+
+		for(int i = 0; i < instances.length(); i++){
+			String url = instances.getJSONObject(i).getJSONObject("_links").getJSONObject("self").getString("href");
+			url = url + "/properties/";
+			String property = httpRequests(url, "", "GET", "application/xml");
+			Document xmlProperties = loadXMLFromString(property);
+			try {
+				String deviceID = xmlProperties.getElementsByTagName(propertyTag).item(0).getFirstChild().getNodeValue();
+				if (deviceID.equals(propertyName)) {
+					id = Integer.toString(instances.getJSONObject(i).getInt("id"));
+				}
+			} catch (NullPointerException e){
+				e.printStackTrace();
+			}
+		}
+		return id;
+	}
+
+	/**
+	 * Request all instances of a given NodeTemplate
+	 * @param host the url to OpenTOSCA
+	 * @return an array with the values
+	 */
+	JSONArray getAllInstancesOfOneNodeTemplate(String host){
+		JSONObject instanceList = getHTTPRequestResponse(host, "user:password");
+		JSONArray instances = instanceList.getJSONArray("node_template_instances");
+		return instances;
+	}
+
+	/**
+	 * XML Document creator from a given xml string
+	 * @param xml the xml as string to create a DOM-document
+	 * @return a DOM-document created by the xml in the string
+	 */
+	Document loadXMLFromString(String xml){
+		try {
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder builder = factory.newDocumentBuilder();
+			InputSource is = new InputSource(new StringReader(xml));
+			return builder.parse(is);
+		}catch (ParserConfigurationException | IOException | SAXException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	/**
+	 *
+	 * Detelets an OpenTOSCA instance of a nodetemplate for the given parameters (
+	 * @param csar the csar of the nodetemplate instance
+	 * @param servicetemplate the servicetemplate of the nodetemplate instance
+	 * @param nodetemplates the nodetemplate where we want to delete an instance
+	 * @param instanceID the ID of the instance we want to delete
+
+	 */
+	void deteInstance(String csar, String servicetemplate, String nodetemplates, String instanceID){
+		String baseHost = "http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate
+				+ "/nodetemplates/" + nodetemplates + "/instances/" + instanceID;
+		LOG.debug("Using " + baseHost + " as URL for deleting Instance " + instanceID);
+
+		//create Instance
+		LOG.debug("Deleting Instances");
+		String deletedInstance = httpRequests(baseHost, "", "DELETE", "application/json");
+		LOG.debug("Deleting response is " + deletedInstance);
 	}
 
 	/**

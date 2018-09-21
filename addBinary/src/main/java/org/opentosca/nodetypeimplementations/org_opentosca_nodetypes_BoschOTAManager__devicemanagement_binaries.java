@@ -18,6 +18,7 @@ import javax.xml.bind.annotation.XmlElement;
 public class org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binaries extends AbstractIAService {
 
 	private final IALogger LOG = new IALogger(org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binaries.class);
+	private final String containerHost = "141.58.61.71";
 
 	/**
 	 * Method to create a new software module, add a binary to it and add the software module to a new distribution set
@@ -41,7 +42,7 @@ public class org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binaries 
 	) {
 		final HashMap<String, String> returnParameters = new HashMap<>();
 		LOG.debug("Starting uploadBinary");
-		Utils utils = new Utils();
+		Utils utils = new Utils(containerHost);
 		//http basic auth
 		String credentials = utils.createCredentials(tenant,user, password);
 		host = utils.generateHost(host);
@@ -62,7 +63,6 @@ public class org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binaries 
 			LOG.debug("Using InstanceID: " + instanceID);
 
 			String nodetemplates = utils.getNodetemplates(csar, servicetemplate, "Distribution");
-			LOG.debug("Habe");
 			utils.createInstance(csar, servicetemplate, nodetemplates, instanceID,
 					Collections.singletonList("distributionSet"), Collections.singletonList(Integer.toString(creation.getDistributionSetID())));
 		}

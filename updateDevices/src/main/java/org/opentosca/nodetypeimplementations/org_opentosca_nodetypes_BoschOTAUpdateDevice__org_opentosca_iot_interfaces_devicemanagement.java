@@ -16,6 +16,8 @@ import java.util.*;
 public class org_opentosca_nodetypes_BoschOTAUpdateDevice__org_opentosca_iot_interfaces_devicemanagement extends AbstractIAService {
 
 	private final IALogger LOG = new IALogger(org_opentosca_nodetypes_BoschOTAUpdateDevice__org_opentosca_iot_interfaces_devicemanagement.class);
+	private final String containerHost = "141.58.61.71";
+
 	/**
 	 * Method to update a given device with a given distribution set
 	 * @param tenant the tenant of Rollout/HawkBit
@@ -38,7 +40,7 @@ public class org_opentosca_nodetypes_BoschOTAUpdateDevice__org_opentosca_iot_int
 	) {
 		final HashMap<String, String> returnParameters = new HashMap<>();
 		LOG.debug("Starting updateDevice");
-		Utils utils = new Utils();
+		Utils utils = new Utils(containerHost);
 		String credentials = utils.createCredentials(tenant,user, password);
 		host = utils.generateHost(host);
 
@@ -55,7 +57,7 @@ public class org_opentosca_nodetypes_BoschOTAUpdateDevice__org_opentosca_iot_int
 				+ "/nodetemplates/" + nodeTemplate + "/instances/";
 		LOG.debug("Using " + "http://" + utils.getHost() + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate
 				+ "/nodetemplates/" + nodeTemplate + "/instances/" + " as URL for updating Instance properties");
-		String nodeTemplateID = utils.getInstanceIDbyPropery(baseHost, deviceName);
+		String nodeTemplateID = utils.getInstanceIDbyProperty(baseHost, deviceName);
 		LOG.debug("Using NodeTemplateInstanceID: " + nodeTemplateID);
 
 		List<String> properties = Arrays.asList("deviceID", "assignedDS");

@@ -21,9 +21,12 @@ import java.util.List;
  * of OpenTOSCA
  */
 class Utils {
-	//TODO: set to container
-	private String host = "141.58.43.61";
+	private String host;
 	private final IALogger LOG = new IALogger(Utils.class);
+
+	public Utils(String containerHost){
+		host = containerHost;
+	}
 	/**
 	 * Creating the credentials for a HawkBit or Rollout instance
 	 * @param tenant the tenant of the Rollout instance or empty is HawkBit instance
@@ -273,51 +276,6 @@ class Utils {
 			return response;
 		}
 		return response;
-	}
-
-	/**
-	 * Requests all registered Devices in OpenTOSCA container and searches the TOSCA-Conainer ID for a given property value
-	 * @param host the url to the OpenTOSCA container
-	 * @param deviceName the name of the device we want to update
-	 * @return the OpenTOSCA container ID we want to update
-	 */
-	String getInstanceIDbyPropery(String host, String deviceName){
-		JSONObject instanceList = getHTTPRequestResponse(host, "user:password");
-		JSONArray instances = instanceList.getJSONArray("node_template_instances");
-		String id = null;
-
-		for(int i = 0; i < instances.length(); i++){
-			String url = instances.getJSONObject(i).getJSONObject("_links").getJSONObject("self").getString("href");
-			url = url + "/properties/";
-			String property = httpRequests(url, "", "GET", "application/xml");
-			Document xmlProperties = loadXMLFromString(property);
-			try {
-				String deviceID = xmlProperties.getElementsByTagName("deviceID").item(0).getFirstChild().getNodeValue();
-				if (deviceID.equals(deviceName)) {
-					id = Integer.toString(instances.getJSONObject(i).getInt("id"));
-				}
-			} catch (NullPointerException e){
-				e.printStackTrace();
-			}
-		}
-		return id;
-	}
-
-	/**
-	 * XML Document creator from a given xml string
-	 * @param xml the xml as string to create a DOM-document
-	 * @return a DOM-document created by the xml in the string
-	 */
-	private Document loadXMLFromString(String xml){
-		try {
-			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder builder = factory.newDocumentBuilder();
-			InputSource is = new InputSource(new StringReader(xml));
-			return builder.parse(is);
-		}catch (ParserConfigurationException | IOException | SAXException e) {
-			e.printStackTrace();
-			return null;
-		}
 	}
 
 	/**

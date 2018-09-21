@@ -22,6 +22,8 @@ class CreateSMaddBinary {
 
 	private String softwareModuleID = null;
 	private final IALogger LOG = new IALogger(CreateSMaddBinary.class);
+	private final static String DESCRIPTION_VALUES = "created_by_OpenTOSCA";
+
 
 	/**
 	 * Constructor, which will automatically create a Software Module, download and upload the give file
@@ -60,9 +62,9 @@ class CreateSMaddBinary {
 		JSONObject inputValues = new JSONObject();
 		inputValues.put("type", "os");
 		inputValues.put("name", name);
-		inputValues.put("version", "created by OpenTOSCA");
-		inputValues.put("vendor", "created by OpenTOSCA");
-		inputValues.put("description", "created by OpenTOSCA");
+		inputValues.put("version", DESCRIPTION_VALUES);
+		inputValues.put("vendor", DESCRIPTION_VALUES);
+		inputValues.put("description", DESCRIPTION_VALUES);
 
 		JSONArray input = new JSONArray();
 		input.put(inputValues);

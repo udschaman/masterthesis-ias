@@ -17,6 +17,8 @@ class CreateDSaddSM {
 
 	private int distributionSetID;
 	private final IALogger LOG = new IALogger(CreateDSaddSM.class);
+	private final static String DESCRIPTION_VALUES = "created_by_OpenTOSCA";
+
 
 	/**
 	 * Constructor which will create an Distribution Set and add a SotwareModule to it
@@ -42,9 +44,9 @@ class CreateDSaddSM {
 		JSONObject inputValues = new JSONObject();
 		inputValues.put("type", "os");
 		inputValues.put("name", DS_name);
-		inputValues.put("version", "created by OpenTOSCA");
+		inputValues.put("version", DESCRIPTION_VALUES);
 		inputValues.put("requiredMigrationStep", false);
-		inputValues.put("description", "created by OpenTOSCA");
+		inputValues.put("description", DESCRIPTION_VALUES);
 		JSONObject modules_id = new JSONObject();
 		modules_id.put("id", softwareModuleID);
 		JSONArray modules = new JSONArray();

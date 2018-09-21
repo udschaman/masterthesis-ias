@@ -21,9 +21,13 @@ import java.util.List;
  * of OpenTOSCA
  */
 class Utils {
-	//TODO: set to container
-	private String host = "141.58.43.61";
+	private String host;
 	private final IALogger LOG = new IALogger(Utils.class);
+
+	public Utils(String containerHost){
+		host = containerHost;
+	}
+
 	/**
 	 * Creating the credentials for a HawkBit or Rollout instance
 	 * @param tenant the tenant of the Rollout instance or empty is HawkBit instance
@@ -129,70 +133,6 @@ class Utils {
 	}
 
 	/**
-	 * Requesting the newest Instance ID of a given ServiceTemplate of a given CSAR
-	 * @param csar the csar to get the service template from
-	 * @param servicetemplate the servicetemplate to get the instances from
-	 * @return the id of the newest service template if one found, else null
-	 */
-	String getInstanceID(String csar, String servicetemplate){
-		JSONObject requestResult = new JSONObject(httpRequests("http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate + "/instances/"
-				, "", "GET", "application/json"));
-		LOG.debug("Requesting ServiceTemplateInstances from " + "http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate + "/instances/");
-		JSONArray instances =  requestResult.getJSONArray("service_template_instances");
-		Integer instanceID = null;
-		long timestamp = 0L;
-
-		//check for an instance which is in a CREATED state and is the newest created instance (there may be older versions laying around)
-		for (int i = 0; i < instances.length(); i++){
-			JSONObject instance = instances.getJSONObject(i);
-			long instanceTimestamp = instance.getLong("created_at");
-			String instanceState = instance.getString("state");
-			int tempInstanceID = instance.getInt("id");
-			if(instanceState.equals("CREATING") && instanceTimestamp > timestamp){
-				timestamp = instanceTimestamp;
-				instanceID = tempInstanceID;
-			}
-		}
-		String response = instanceID == null ? null : Integer.toString(instanceID);
-		LOG.debug("Using ServceTemplateInstance with ID: " + response);
-		return response;
-	}
-
-	/**
-	 *
-	 * Create an OpenTOSCA instance of a nodetemplate for the given parameters (we need this, as we can only return one value per return value to OpenTOSCA)
-	 * @param csar the csar of the nodetemplate instance
-	 * @param servicetemplate the servicetemplate of the nodetemplate instance
-	 * @param nodetemplates the nodetemplate where we want to create an instance
-	 * @param instanceID the ID of the new instance
-	 * @param properties the property names of the new instance
-	 * @param propertiesValue the values of the properties
-	 */
-	void createInstance(String csar, String servicetemplate, String nodetemplates, String instanceID, List<String> properties, List<String> propertiesValue){
-		String baseHost = "http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate
-				+ "/nodetemplates/" + nodetemplates + "/instances/";
-		LOG.debug("Using " + "http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate
-				+ "/nodetemplates/" + nodetemplates + "/instances/" + " as URL for creating Instances");
-
-		//create Instance
-		LOG.debug("Creating Instances");
-		String newInstance = httpRequests(baseHost, instanceID, "POST", "text/plain");
-
-		//set properties
-		LOG.debug("Setting Properties");
-		StringBuilder propValues = new StringBuilder("<Properties>");
-		for(int i = 0; i < properties.size(); i++) {
-			propValues.append("<").append(properties.get(i)).append(">").append(propertiesValue.get(i)).append("</").append(properties.get(i)).append(">");
-		}
-		propValues.append("</Properties>");
-		httpRequests(newInstance + "/properties/", propValues.toString(), "PUT", "application/xml");
-
-		//set state
-		LOG.debug("Setting the state");
-		httpRequests(newInstance + "/state/", "STARTED", "PUT", "text/plain");
-	}
-
-	/**
 	 * Making a HTTP request for a given HTTP verb, getting an response message back.
 	 * For not GET verbs we need to escape the message properly
 	 * @param host the host for the request
@@ -281,7 +221,7 @@ class Utils {
 	 * @param deviceName the name of the device we want to update
 	 * @return the OpenTOSCA container ID we want to update
 	 */
-	String getInstanceIDbyPropery(String host, String deviceName){
+	String getInstanceIDbyProperty(String host, String deviceName){
 		JSONObject instanceList = getHTTPRequestResponse(host, "user:password");
 		JSONArray instances = instanceList.getJSONArray("node_template_instances");
 		String id = null;
