@@ -21,7 +21,7 @@ import javax.xml.bind.annotation.XmlElement;
 public class org_opentosca_nodetypes_BoschOTAManager__deviemanagement_sync extends AbstractIAService {
 
 	private final IALogger LOG = new IALogger(org_opentosca_nodetypes_BoschOTAManager__deviemanagement_sync.class);
-	private final String containerHost = "141.58.63.166";
+	private final String containerHost = "container";
 
 
 	/**

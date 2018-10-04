@@ -16,7 +16,7 @@ import java.util.*;
 public class org_opentosca_nodetypes_BoschOTAUpdateDevice__org_opentosca_iot_interfaces_devicemanagement extends AbstractIAService {
 
 	private final IALogger LOG = new IALogger(org_opentosca_nodetypes_BoschOTAUpdateDevice__org_opentosca_iot_interfaces_devicemanagement.class);
-	private final String containerHost = "141.58.61.71";
+	private final String containerHost = "container";
 
 	/**
 	 * Method to update a given device with a given distribution set

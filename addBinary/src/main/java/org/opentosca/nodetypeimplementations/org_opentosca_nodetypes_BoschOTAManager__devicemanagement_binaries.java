@@ -18,7 +18,7 @@ import javax.xml.bind.annotation.XmlElement;
 public class org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binaries extends AbstractIAService {
 
 	private final IALogger LOG = new IALogger(org_opentosca_nodetypes_BoschOTAManager__devicemanagement_binaries.class);
-	private final String containerHost = "141.58.61.71";
+	private final String containerHost = "container";
 
 	/**
 	 * Method to create a new software module, add a binary to it and add the software module to a new distribution set

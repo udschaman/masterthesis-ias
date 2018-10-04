@@ -36,7 +36,7 @@
 
     <properties>
         <run.HttpPort>9090</run.HttpPort>
-        <winery.upload.url>http://141.58.44.197:8080/winery/artifacttemplates/http%253A%252F%252Fopentosca.org%252Fartifacttemplates/BoschOTAManager-sync-IA/files</winery.upload.url>
+        <winery.upload.url>http://localhost:8080/winery/artifacttemplates/http%253A%252F%252Fopentosca.org%252Fartifacttemplates/BoschOTAManager-sync-IA/files</winery.upload.url>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>

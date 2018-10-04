@@ -18,7 +18,7 @@ import javax.jws.soap.SOAPBinding;
 public class org_opentosca_nodetypes_BoschOTARequestDevice_w1_wip1__org_opentosca_interfaces_lifecycle extends AbstractIAService {
 
 	private final IALogger LOG = new IALogger(org_opentosca_nodetypes_BoschOTARequestDevice_w1_wip1__org_opentosca_interfaces_lifecycle.class);
-	private final String containerHost = "141.58.63.166";
+	private final String containerHost = "container";
 
 	/**
 	 * The install operation for the OTA-Manager
