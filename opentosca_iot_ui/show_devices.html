@@ -1,0 +1,246 @@
+ <!DOCTYPE html>
+<html>
+<head>
+	 <meta charset="utf-8"/>
+</head>
+<body onload="loadCsars();">
+
+<h1>OpenTOSCA IOT Device Lists</h1>
+
+<h2>Csars</h2>
+<p id="csars"></p>
+
+<h2>Service Templates</h2>
+<p id="servicetemplates"></p>
+
+<h2>Devices</h2>
+<p id="devices"></p>
+
+<h2>Distribution Sets</h2>
+<p id ="distribution sets"></p>
+
+<h2>OTAs</h2>
+<p id ="otas"></p>
+
+
+<script type="text/javascript">
+function loadCsars(){
+	var entryPoint = "http://localhost:1337/csars";
+	var xhttp = new XMLHttpRequest();
+  	xhttp.open("GET", entryPoint, false);
+  	xhttp.send();
+  	var responseText = xhttp.responseText;
+	var mydiv = document.getElementById("csars");
+    var newcontent = document.createElement('div');
+
+	var i;
+    var csars = JSON.parse(responseText).csars;
+ 	var result = "";
+
+ 	for(i = 0; i < csars.length; i++){
+		var csarID = JSON.stringify(csars[i].id);
+		var servicetemplate = JSON.stringify(csars[i]._links.self.href);
+		servicetemplate = servicetemplate.substr(1);
+		servicetemplate = servicetemplate.slice(0, -1);
+		var inner_xhttp = new XMLHttpRequest();
+  		inner_xhttp.open("GET", servicetemplate, false);
+  		inner_xhttp.send();
+  		var csarServiceTemplates = JSON.parse(inner_xhttp.responseText)._links.servicetemplate.href;
+		result = result + "<b>CsarID: </b>" + csarID + "</br> <b>CsarServiceTemplates: </b>" + csarServiceTemplates +"<br/><br/>";
+
+		var serviceTemplateInstances = csarServiceTemplates + "/instances/";
+		var serviceTemplateNodeTemplates = csarServiceTemplates + "/nodetemplates/";
+		loadServiceTemplates(serviceTemplateInstances);
+		loadNodeTemplates(serviceTemplateNodeTemplates);
+
+	}
+    newcontent.innerHTML = result;
+
+    while (newcontent.firstChild) {
+     	mydiv.appendChild(newcontent.firstChild);
+    }
+}
+
+
+function loadServiceTemplates(url){
+	var xhttp = new XMLHttpRequest();
+  	xhttp.open("GET", url, false);
+  	xhttp.send();
+  	var responseText = xhttp.responseText;
+	var mydiv = document.getElementById("servicetemplates");
+    var newcontent = document.createElement('div');
+
+    var i;
+    var service_template_instances = JSON.parse(responseText).service_template_instances;
+ 	var result = "";
+
+	for(i = 0; i < service_template_instances.length; i++){
+		var templateID = JSON.stringify(service_template_instances[i].id);
+		var templateState = JSON.stringify(service_template_instances[i].state);
+		var templateCSARID = JSON.stringify(service_template_instances[i].csar_id);
+		var ServiceTemplateInstanceIDURL = url + templateID;
+		result = result + "<b>ServiceTemplateInstanceID: </b>" + templateID + "<br/><b>ServiceTemplateInstanceIDState: </b>" + templateState + "<br/><b>ServiceTemplateCSAR: </b>" + templateCSARID + "<br/><b>OpenTOSCAContainerAPIServiceInstanceURL</b> " + ServiceTemplateInstanceIDURL + "<br/><br/>";
+	}
+    newcontent.innerHTML = result;
+
+    while (newcontent.firstChild) {
+     	mydiv.appendChild(newcontent.firstChild);
+    }
+
+}
+
+function loadNodeTemplates(url){
+	var xhttp = new XMLHttpRequest();
+  	xhttp.open("GET", url, false);
+  	xhttp.send();
+  	var responseText = xhttp.responseText;
+
+  	var i;
+    var node_templates = JSON.parse(responseText).node_templates;
+ 	var result = "";
+
+	for(i = 0; i < node_templates.length; i++){
+		var templateID = JSON.stringify(node_templates[i].id);
+		var NodeTemplateInstances = JSON.stringify(node_templates[i]._links.self.href);
+		NodeTemplateInstances = NodeTemplateInstances.substr(1);
+		NodeTemplateInstances = NodeTemplateInstances.slice(0, -1);
+		NodeTemplateInstances = NodeTemplateInstances + "/instances/"
+
+		if(templateID.startsWith("\"Device")){
+			loadDevices(NodeTemplateInstances);
+		} else if (templateID.startsWith("\"DistributionSet")) {
+			loadDS(NodeTemplateInstances);
+		} else if (templateID.startsWith("\"Bosch")){
+			loadOTAs(NodeTemplateInstances);
+		}
+	}
+}
+
+
+function loadOTAs(url){
+  	var xhttp = new XMLHttpRequest();
+  	xhttp.open("GET", url, false);
+  	xhttp.send();
+  	var responseText = xhttp.responseText;
+	var mydiv = document.getElementById("otas");
+    var newcontent = document.createElement('div');
+
+    var i;
+    var node_template_instances = JSON.parse(responseText).node_template_instances;
+ 	var result = "";
+
+ 	var show;
+
+	for(i = 0; i < node_template_instances.length; i++){
+		show = true;
+		var templateID = JSON.stringify(node_template_instances[i].id);
+		var templateState = JSON.stringify(node_template_instances[i].state);
+		if(templateState.startsWith("\"CREATED")){
+			show = true;
+		}
+		var serviceTemplateInstanceId = JSON.stringify(node_template_instances[i].service_template_instance_id);
+		var csarid = JSON.stringify(node_template_instances[i].csar_id);
+		var inner_xhttp = new XMLHttpRequest();
+		var url = JSON.stringify(node_template_instances[i]._links.self.href);
+		url = url.substr(1);
+		url = url.slice(0, -1);
+		url = url + "/properties/"
+	  	inner_xhttp.open("GET", url, false);
+	  	inner_xhttp.send();
+	  	var templateProperties = inner_xhttp.responseText;
+		var parser = new DOMParser();
+		var xmlDoc = parser.parseFromString(templateProperties,"text/xml");
+		var tenant = xmlDoc.getElementsByTagName("tenant")[0].childNodes[0].nodeValue;
+		var user = xmlDoc.getElementsByTagName("user")[0].childNodes[0].nodeValue;
+		var password = xmlDoc.getElementsByTagName("password")[0].childNodes[0].nodeValue;
+		var host = xmlDoc.getElementsByTagName("host")[0].childNodes[0].nodeValue;
+		if(show == true){
+			result = result + "<b>NodeTemplateInstanceID: </b>" + templateID + "<br/><b>NodeTemplateInstanceIDState: </b>" + templateState + "<br/><b>NodeTemplateInstanceProperties: </b>" + "<b>tenant: </b>" + tenant + " <b>user: </b>" + user + " <b>password: </b>" + password + " <b>host: </b>" + host + "<br/><b>CsarId: </b>" + csarid + "<br/><b>ServiceTemplateInstanceId: </b>" + serviceTemplateInstanceId + "<br/><br/>";
+		}
+	}
+
+	newcontent.innerHTML = result;
+
+	while (newcontent.firstChild) {
+	  	mydiv.appendChild(newcontent.firstChild);
+	}
+
+}
+
+function loadDevices(url) {
+  	var xhttp = new XMLHttpRequest();
+  	xhttp.open("GET", url, false);
+  	xhttp.send();
+  	var responseText = xhttp.responseText;
+	var mydiv = document.getElementById("devices");
+    var newcontent = document.createElement('div');
+
+    var i;
+    var node_template_instances = JSON.parse(responseText).node_template_instances;
+ 	var result = "";
+
+	for(i = 0; i < node_template_instances.length; i++){
+		var templateID = JSON.stringify(node_template_instances[i].id);
+		var templateState = JSON.stringify(node_template_instances[i].state);
+		var serviceTemplateInstanceId = JSON.stringify(node_template_instances[i].service_template_instance_id);
+		var csarid = JSON.stringify(node_template_instances[i].csar_id);
+		var inner_xhttp = new XMLHttpRequest();
+		var url = JSON.stringify(node_template_instances[i]._links.self.href);
+		url = url.substr(1);
+		url = url.slice(0, -1);
+		url = url + "/properties/"
+  		inner_xhttp.open("GET", url, false);
+  		inner_xhttp.send();
+  		var templateProperties = inner_xhttp.responseText;
+  		var parser = new DOMParser();
+		var xmlDoc = parser.parseFromString(templateProperties,"text/xml");
+		var deviceID = xmlDoc.getElementsByTagName("deviceID")[0].childNodes[0].nodeValue;
+		var assignedDS = xmlDoc.getElementsByTagName("assignedDS")[0].childNodes[0].nodeValue;
+		result = result + "<b>NodeTemplateInstanceID: </b>" + templateID + "<br/><b>NodeTemplateInstanceIDState: </b>" + templateState + "<br/><b>NodeTemplateInstanceProperties: </b>" + "<b>deviceID: </b>" + deviceID + " <b>assignedDS: </b>" + assignedDS + "<br/><b>CsarId: </b>" + csarid + "<br/><b>ServiceTemplateInstanceId: </b>" + serviceTemplateInstanceId + "<br/><br/>";
+	}
+    newcontent.innerHTML = result;
+
+    while (newcontent.firstChild) {
+     	mydiv.appendChild(newcontent.firstChild);
+    }
+}
+
+function loadDS(url) {
+  	var xhttp = new XMLHttpRequest();
+  	xhttp.open("GET", url, false);
+  	xhttp.send();
+  	var responseText = xhttp.responseText;
+	var mydiv = document.getElementById("distribution sets");
+    var newcontent = document.createElement('div');
+
+    var i;
+    var node_template_instances = JSON.parse(responseText).node_template_instances;
+ 	var result = "";
+
+	for(i = 0; i < node_template_instances.length; i++){
+		var templateID = JSON.stringify(node_template_instances[i].id);
+		var templateState = JSON.stringify(node_template_instances[i].state);
+		var serviceTemplateInstanceId = JSON.stringify(node_template_instances[i].service_template_instance_id);
+		var csarid = JSON.stringify(node_template_instances[i].csar_id);
+		var inner_xhttp = new XMLHttpRequest();
+		var url = JSON.stringify(node_template_instances[i]._links.self.href);
+		url = url.substr(1);
+		url = url.slice(0, -1);
+		url = url + "/properties/"
+  		inner_xhttp.open("GET", url, false);
+  		inner_xhttp.send();
+  		var templateProperties = inner_xhttp.responseText;
+  		var parser = new DOMParser();
+		var xmlDoc = parser.parseFromString(templateProperties,"text/xml");
+		var distributionSet = xmlDoc.getElementsByTagName("distributionSet")[0].childNodes[0].nodeValue;
+		result = result + "<b>NodeTemplateInstanceID: </b>" + templateID + "<br/><b>NodeTemplateInstanceIDState: </b>" + templateState + "<br/><b>NodeTemplateInstanceProperties: </b>" + "<b>distributionSet: </b>" + distributionSet + "<br/><b>CsarId: </b>" + csarid + "<br/><b>ServiceTemplateInstanceId: </b>" + serviceTemplateInstanceId + "<br/><br/>";
+	}
+    newcontent.innerHTML = result;
+
+    while (newcontent.firstChild) {
+     	mydiv.appendChild(newcontent.firstChild);
+    }
+}
+</script>
+</body>
+</html> 
