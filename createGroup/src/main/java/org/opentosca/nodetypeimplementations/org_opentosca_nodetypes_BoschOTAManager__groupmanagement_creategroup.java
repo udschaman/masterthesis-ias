@@ -7,7 +7,6 @@ import javax.jws.WebMethod;
 import javax.jws.WebParam;
 import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
-import javax.xml.bind.annotation.XmlElement;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,23 +27,28 @@ public class org_opentosca_nodetypes_BoschOTAManager__groupmanagement_creategrou
 	) {
 		// This HashMap holds the return parameters of this operation.
 		final HashMap<String,String> returnParameters = new HashMap<String, String>();
+		logger.debug("Start creating group with name " + nameOfGroup + " and devices " + deviceName);
 
-		// TODO: Implement your operation here.
+		String[] devices = deviceName.split(" ");
+		StringBuilder deviceList = new StringBuilder();
 
+		for (String device : devices) {
+			deviceList.append(device);
+			deviceList.append(",");
+		}
 
-		// Output Parameter 'groupName' (optional)
-		// TODO: Set groupName parameter here.
-		// Do NOT delete the next line of code. Set "" as value if you want to return nothing or an empty result!
-		returnParameters.put("groupName", "TODO");
+		deviceList.deleteCharAt(deviceList.length()-1);
 
-		// Output Parameter 'deviceList' (optional)
-		// TODO: Set deviceList parameter here.
-		// Do NOT delete the next line of code. Set "" as value if you want to return nothing or an empty result!
-		returnParameters.put("deviceList", "TODO");
+		if(nameOfGroup.isEmpty()){
+			nameOfGroup = "default";
+		}
+		if(deviceList.toString().isEmpty()){
+			deviceList.append("noMembers");
+		}
 
+		returnParameters.put("groupName", nameOfGroup);
+		returnParameters.put("deviceList", deviceList.toString());
 		sendResponse(returnParameters);
+		logger.debug("Finished creating group");
 	}
-
-
-
 }

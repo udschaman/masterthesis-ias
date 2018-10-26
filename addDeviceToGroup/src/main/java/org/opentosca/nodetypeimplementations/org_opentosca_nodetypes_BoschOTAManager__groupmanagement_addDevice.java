@@ -32,14 +32,7 @@ public class org_opentosca_nodetypes_BoschOTAManager__groupmanagement_addDevice 
 		// TODO: Implement your operation here.
 
 
-		// Output Parameter 'success' (optional)
-		// TODO: Set success parameter here.
-		// Do NOT delete the next line of code. Set "" as value if you want to return nothing or an empty result!
-		returnParameters.put("success", "TODO");
-
+		returnParameters.put("success", "success");
 		sendResponse(returnParameters);
 	}
-
-
-
 }

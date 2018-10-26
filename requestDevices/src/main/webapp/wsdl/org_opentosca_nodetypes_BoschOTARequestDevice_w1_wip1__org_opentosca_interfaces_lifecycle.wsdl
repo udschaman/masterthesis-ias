@@ -9,6 +9,8 @@
       <xs:element form="qualified" minOccurs="0" name="user" type="xs:string"/>
       <xs:element form="qualified" minOccurs="0" name="password" type="xs:string"/>
       <xs:element form="qualified" minOccurs="0" name="host" type="xs:string"/>
+      <xs:element form="qualified" minOccurs="0" name="deviceList" type="xs:string"/>
+      <xs:element form="qualified" minOccurs="0" name="groupName" type="xs:string"/>
     </xs:sequence>
   </xs:complexType>
 </xs:schema>
