@@ -115,7 +115,7 @@ public class org_opentosca_nodetypes_BoschOTAManager__deviemanagement_sync exten
 			}
 		}
 
-		//TODO: 4) Add new devices and DS to OpenTOSCA or remove that one, that are to many
+		//4) Add new devices and DS to OpenTOSCA or remove that one, that are to many
 		String nodetemplates = utils.getNodetemplates(csar, servicetemplate, "Device");
 		LOG.debug("Using NodeTemplate: "+ nodetemplates);
 		for (Map.Entry<String, Device> entry : devicesToChange.entrySet()) {

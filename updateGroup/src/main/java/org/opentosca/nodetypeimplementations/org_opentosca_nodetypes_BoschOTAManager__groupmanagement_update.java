@@ -7,17 +7,13 @@ import javax.jws.WebMethod;
 import javax.jws.WebParam;
 import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
-import javax.xml.bind.annotation.XmlElement;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @WebService
 public class org_opentosca_nodetypes_BoschOTAManager__groupmanagement_update extends AbstractIAService {
 
-    private static final Logger logger = LoggerFactory.getLogger(
-            org_opentosca_nodetypes_BoschOTAManager__groupmanagement_update.class
-    );
+	private final IALogger LOG = new IALogger(org_opentosca_nodetypes_BoschOTAManager__groupmanagement_update.class);
+
 
 	@WebMethod
 	@SOAPBinding

@@ -34,9 +34,7 @@ public class org_opentosca_nodetypes_BoschOTARequestDevice_w1_wip1__org_opentosc
 		@WebParam(name="tenant", targetNamespace="http://nodetypeimplementations.opentosca.org/") String tenant,
 		@WebParam(name="user", targetNamespace="http://nodetypeimplementations.opentosca.org/") String user,
 		@WebParam(name="password", targetNamespace="http://nodetypeimplementations.opentosca.org/") String password,
-		@WebParam(name="host", targetNamespace="http://nodetypeimplementations.opentosca.org/") String host,
-		@WebParam(name="deviceList", targetNamespace="http://nodetypeimplementations.opentosca.org/") String deviceList,
-		@WebParam(name="groupName", targetNamespace="http://nodetypeimplementations.opentosca.org/") String groupName
+		@WebParam(name="host", targetNamespace="http://nodetypeimplementations.opentosca.org/") String host
 	) {
 		// This HashMap holds the return parameters of this operation.
 		final HashMap<String, String> returnParameters = new HashMap<String, String>();

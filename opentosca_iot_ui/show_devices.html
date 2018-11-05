@@ -19,6 +19,9 @@
 <h2>Distribution Sets</h2>
 <p id ="distribution sets"></p>
 
+<h2>IoT-Groups</h2>
+<p id ="groups"></p>
+
 <h2>OTAs</h2>
 <p id ="otas"></p>
 
@@ -112,6 +115,8 @@ function loadNodeTemplates(url){
 			loadDS(NodeTemplateInstances);
 		} else if (templateID.startsWith("\"Bosch")){
 			loadOTAs(NodeTemplateInstances);
+		} else if (templateID.startsWith("\"IoT-Group")){
+			loadGroup(NodeTemplateInstances);
 		}
 	}
 }
@@ -234,6 +239,44 @@ function loadDS(url) {
 		var xmlDoc = parser.parseFromString(templateProperties,"text/xml");
 		var distributionSet = xmlDoc.getElementsByTagName("distributionSet")[0].childNodes[0].nodeValue;
 		result = result + "<b>NodeTemplateInstanceID: </b>" + templateID + "<br/><b>NodeTemplateInstanceIDState: </b>" + templateState + "<br/><b>NodeTemplateInstanceProperties: </b>" + "<b>distributionSet: </b>" + distributionSet + "<br/><b>CsarId: </b>" + csarid + "<br/><b>ServiceTemplateInstanceId: </b>" + serviceTemplateInstanceId + "<br/><br/>";
+	}
+    newcontent.innerHTML = result;
+
+    while (newcontent.firstChild) {
+     	mydiv.appendChild(newcontent.firstChild);
+    }
+}
+
+function loadGroup(url) {
+  	var xhttp = new XMLHttpRequest();
+  	xhttp.open("GET", url, false);
+  	xhttp.send();
+  	var responseText = xhttp.responseText;
+	var mydiv = document.getElementById("groups");
+    var newcontent = document.createElement('div');
+
+    var i;
+    var node_template_instances = JSON.parse(responseText).node_template_instances;
+ 	var result = "";
+
+	for(i = 0; i < node_template_instances.length; i++){
+		var templateID = JSON.stringify(node_template_instances[i].id);
+		var templateState = JSON.stringify(node_template_instances[i].state);
+		var serviceTemplateInstanceId = JSON.stringify(node_template_instances[i].service_template_instance_id);
+		var csarid = JSON.stringify(node_template_instances[i].csar_id);
+		var inner_xhttp = new XMLHttpRequest();
+		var url = JSON.stringify(node_template_instances[i]._links.self.href);
+		url = url.substr(1);
+		url = url.slice(0, -1);
+		url = url + "/properties/"
+  		inner_xhttp.open("GET", url, false);
+  		inner_xhttp.send();
+  		var templateProperties = inner_xhttp.responseText;
+  		var parser = new DOMParser();
+		var xmlDoc = parser.parseFromString(templateProperties,"text/xml");
+		var groupName = xmlDoc.getElementsByTagName("groupName")[0].childNodes[0].nodeValue;
+		var deviceList = xmlDoc.getElementsByTagName("deviceList")[0].childNodes[0].nodeValue;
+		result = result + "<b>NodeTemplateInstanceID: </b>" + templateID + "<br/><b>NodeTemplateInstanceIDState: </b>" + templateState + "<br/><b>NodeTemplateInstanceProperties: </b>"  + "<b>groupName: </b>" + groupName + " <b>deviceList: </b>" + deviceList + "<br/><b>CsarId: </b>" + csarid + "<br/><b>ServiceTemplateInstanceId: </b>" + serviceTemplateInstanceId + "<br/><br/>";
 	}
     newcontent.innerHTML = result;
 

@@ -13,6 +13,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.List;
 
 /**
  * This class offers utility methods to handle the needed API logic to work with Rollout/HawkBit in the Context
@@ -131,6 +132,69 @@ class Utils {
 	}
 
 	/**
+	 * Requesting the newest Instance ID of a given ServiceTemplate of a given CSAR
+	 * @param csar the csar to get the service template from
+	 * @param servicetemplate the servicetemplate to get the instances from
+	 * @return the id of the newest service template if one found, else null
+	 */
+	String getInstanceID(String csar, String servicetemplate){
+		JSONObject requestResult = new JSONObject(httpRequests("http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate + "/instances/"
+				, "", "GET", "application/json"));
+		LOG.debug("Requesting ServiceTemplateInstances from " + "http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate + "/instances/");
+		JSONArray instances =  requestResult.getJSONArray("service_template_instances");
+		Integer instanceID = null;
+		long timestamp = 0L;
+
+		//check for an instance which is in a CREATED state and is the newest created instance (there may be older versions laying around)
+		for (int i = 0; i < instances.length(); i++){
+			JSONObject instance = instances.getJSONObject(i);
+			long instanceTimestamp = instance.getLong("created_at");
+			String instanceState = instance.getString("state");
+			int tempInstanceID = instance.getInt("id");
+			if(instanceState.equals("CREATED") && instanceTimestamp > timestamp){
+				timestamp = instanceTimestamp;
+				instanceID = tempInstanceID;
+			}
+		}
+		String response = instanceID == null ? null : Integer.toString(instanceID);
+		LOG.debug("Using ServceTemplateInstance with ID: " + response);
+		return response;
+	}
+
+	/**
+	 *
+	 * Create an OpenTOSCA instance of a nodetemplate for the given parameters (we need this, as we can only return one value per return value to OpenTOSCA)
+	 * @param csar the csar of the nodetemplate instance
+	 * @param servicetemplate the servicetemplate of the nodetemplate instance
+	 * @param nodetemplates the nodetemplate where we want to create an instance
+	 * @param instanceID the ID of the new instance
+	 * @param properties the property names of the new instance
+	 * @param propertiesValue the values of the properties
+	 */
+	void createInstance(String csar, String servicetemplate, String nodetemplates, String instanceID, List<String> properties, List<String> propertiesValue){
+		String baseHost = "http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate
+				+ "/nodetemplates/" + nodetemplates + "/instances/";
+		LOG.debug("Using " + baseHost + " as URL for creating Instances");
+
+		//create Instance
+		LOG.debug("Creating Instances");
+		String newInstance = httpRequests(baseHost, instanceID, "POST", "text/plain");
+
+		//set properties
+		LOG.debug("Setting Properties");
+		StringBuilder propValues = new StringBuilder("<Properties>");
+		for(int i = 0; i < properties.size(); i++) {
+			propValues.append("<").append(properties.get(i)).append(">").append(propertiesValue.get(i)).append("</").append(properties.get(i)).append(">");
+		}
+		propValues.append("</Properties>");
+		httpRequests(newInstance + "/properties/", propValues.toString(), "PUT", "application/xml");
+
+		//set state
+		LOG.debug("Setting the state");
+		httpRequests(newInstance + "/state/", "STARTED", "PUT", "text/plain");
+	}
+
+	/**
 	 * Making a HTTP request for a given HTTP verb, getting an response message back.
 	 * For not GET verbs we need to escape the message properly
 	 * @param host the host for the request
@@ -214,14 +278,14 @@ class Utils {
 	}
 
 	/**
-	 * Requests all registered Devices in OpenTOSCA container and searches the TOSCA-Conainer ID for a given property value
+	 * Requests all registered instances in OpenTOSCA container and searches the TOSCA-Conainer ID for a given property value
 	 * @param host the url to the OpenTOSCA container
-	 * @param groupName the name of the group we want to update
+	 * @param propertyName the name of the instance we want to update
+	 * @param propertyTag the tag of the property we want to search for
 	 * @return the OpenTOSCA container ID we want to update
 	 */
-	String getInstanceIDbyProperty(String host, String groupName){
-		JSONObject instanceList = getHTTPRequestResponse(host, "user:password");
-		JSONArray instances = instanceList.getJSONArray("node_template_instances");
+	String getInstanceIDbyProperty(String host, String propertyName, String propertyTag){
+		JSONArray instances = getAllInstancesOfOneNodeTemplate(host);
 		String id = null;
 
 		for(int i = 0; i < instances.length(); i++){
@@ -230,8 +294,8 @@ class Utils {
 			String property = httpRequests(url, "", "GET", "application/xml");
 			Document xmlProperties = loadXMLFromString(property);
 			try {
-				String groupID = xmlProperties.getElementsByTagName("groupName").item(0).getFirstChild().getNodeValue();
-				if (groupID.equals(groupName)) {
+				String deviceID = xmlProperties.getElementsByTagName(propertyTag).item(0).getFirstChild().getNodeValue();
+				if (deviceID.equals(propertyName)) {
 					id = Integer.toString(instances.getJSONObject(i).getInt("id"));
 				}
 			} catch (NullPointerException e){
@@ -241,27 +305,23 @@ class Utils {
 		return id;
 	}
 
-
-	String getProperties(String xml){
-		StringBuilder properties = new StringBuilder();
-
-		Document xmlProperties = loadXMLFromString(xml);
-		try {
-			properties.append(xmlProperties.getElementsByTagName("deviceList").item(0).getFirstChild().getNodeValue());
-		} catch (NullPointerException e){
-			e.printStackTrace();
-		}
-
-		return  properties.toString();
+	/**
+	 * Request all instances of a given NodeTemplate
+	 * @param host the url to OpenTOSCA
+	 * @return an array with the values
+	 */
+	JSONArray getAllInstancesOfOneNodeTemplate(String host){
+		JSONObject instanceList = getHTTPRequestResponse(host, "user:password");
+		JSONArray instances = instanceList.getJSONArray("node_template_instances");
+		return instances;
 	}
-
 
 	/**
 	 * XML Document creator from a given xml string
 	 * @param xml the xml as string to create a DOM-document
 	 * @return a DOM-document created by the xml in the string
 	 */
-	private Document loadXMLFromString(String xml){
+	Document loadXMLFromString(String xml){
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder builder = factory.newDocumentBuilder();
@@ -271,6 +331,26 @@ class Utils {
 			e.printStackTrace();
 			return null;
 		}
+	}
+
+	/**
+	 *
+	 * Detelets an OpenTOSCA instance of a nodetemplate for the given parameters (
+	 * @param csar the csar of the nodetemplate instance
+	 * @param servicetemplate the servicetemplate of the nodetemplate instance
+	 * @param nodetemplates the nodetemplate where we want to delete an instance
+	 * @param instanceID the ID of the instance we want to delete
+
+	 */
+	void deteInstance(String csar, String servicetemplate, String nodetemplates, String instanceID){
+		String baseHost = "http://" + host + ":1337/csars/" + csar + "/servicetemplates/" + servicetemplate
+				+ "/nodetemplates/" + nodetemplates + "/instances/" + instanceID;
+		LOG.debug("Using " + baseHost + " as URL for deleting Instance " + instanceID);
+
+		//create Instance
+		LOG.debug("Deleting Instances");
+		String deletedInstance = httpRequests(baseHost, "", "DELETE", "application/json");
+		LOG.debug("Deleting response is " + deletedInstance);
 	}
 
 	/**

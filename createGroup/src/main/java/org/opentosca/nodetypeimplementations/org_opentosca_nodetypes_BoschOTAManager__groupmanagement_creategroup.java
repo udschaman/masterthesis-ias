@@ -1,6 +1,8 @@
 package org.opentosca.nodetypeimplementations;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.jws.Oneway;
 import javax.jws.WebMethod;
@@ -8,15 +10,13 @@ import javax.jws.WebParam;
 import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @WebService
 public class org_opentosca_nodetypes_BoschOTAManager__groupmanagement_creategroup extends AbstractIAService {
 
-    private static final Logger logger = LoggerFactory.getLogger(
-            org_opentosca_nodetypes_BoschOTAManager__groupmanagement_creategroup.class
-    );
+	private final IALogger LOG = new IALogger(org_opentosca_nodetypes_BoschOTAManager__groupmanagement_creategroup.class);
+	private final String containerHost = "container";
+
 
 	@WebMethod
 	@SOAPBinding
@@ -27,7 +27,18 @@ public class org_opentosca_nodetypes_BoschOTAManager__groupmanagement_creategrou
 	) {
 		// This HashMap holds the return parameters of this operation.
 		final HashMap<String,String> returnParameters = new HashMap<String, String>();
-		logger.debug("Start creating group with name " + nameOfGroup + " and devices " + deviceName);
+		LOG.debug("Start creating group with name " + nameOfGroup + " and devices " + deviceName);
+
+		Utils utils = new Utils(containerHost);
+		String csar = utils.getCSAR();
+		LOG.debug("Using CSAR: " + csar);
+		String servicetemplate = utils.getServiceTemplate(csar);
+		LOG.debug("Usind ServiceTemplate: " + servicetemplate);
+		String instanceID = utils.getInstanceID(csar, servicetemplate);
+		LOG.debug("Using InstanceID: " + instanceID);
+		String nodeTemplate = utils.getNodetemplates(csar, servicetemplate, "IoT-Group");
+		LOG.debug("Using NodeTemplate: " + nodeTemplate);
+
 
 		String[] devices = deviceName.split(" ");
 		StringBuilder deviceList = new StringBuilder();
@@ -46,9 +57,13 @@ public class org_opentosca_nodetypes_BoschOTAManager__groupmanagement_creategrou
 			deviceList.append("noMembers");
 		}
 
+		utils.createInstance(csar, servicetemplate, nodeTemplate, instanceID,
+				Arrays.asList("groupName", "deviceList"),
+				Arrays.asList(nameOfGroup, deviceList.toString()));
+
 		returnParameters.put("groupName", nameOfGroup);
 		returnParameters.put("deviceList", deviceList.toString());
 		sendResponse(returnParameters);
-		logger.debug("Finished creating group");
+		LOG.debug("Finished creating group");
 	}
 }
