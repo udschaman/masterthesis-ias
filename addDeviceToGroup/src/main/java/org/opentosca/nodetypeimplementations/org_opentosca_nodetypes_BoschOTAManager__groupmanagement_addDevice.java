@@ -14,7 +14,7 @@ import javax.jws.soap.SOAPBinding;
 public class org_opentosca_nodetypes_BoschOTAManager__groupmanagement_addDevice extends AbstractIAService {
 
 	private final IALogger LOG = new IALogger(org_opentosca_nodetypes_BoschOTAManager__groupmanagement_addDevice.class);
-	private final String containerHost = "141.58.209.46";//"container";
+	private final String containerHost = "container";
 
 
 	@WebMethod

@@ -216,10 +216,10 @@ class Utils {
 	/**
 	 * Requests all registered Devices in OpenTOSCA container and searches the TOSCA-Conainer ID for a given property value
 	 * @param host the url to the OpenTOSCA container
-	 * @param deviceName the name of the device we want to update
+	 * @param name the name of the device we want to update
 	 * @return the OpenTOSCA container ID we want to update
 	 */
-	String getInstanceIDbyProperty(String host, String deviceName){
+	String getInstanceIDbyProperty(String host, String name, String type){
 		JSONObject instanceList = getHTTPRequestResponse(host, "user:password");
 		JSONArray instances = instanceList.getJSONArray("node_template_instances");
 		String id = null;
@@ -230,8 +230,8 @@ class Utils {
 			String property = httpRequests(url, "", "GET", "application/xml");
 			Document xmlProperties = loadXMLFromString(property);
 			try {
-				String deviceID = xmlProperties.getElementsByTagName("deviceID").item(0).getFirstChild().getNodeValue();
-				if (deviceID.equals(deviceName)) {
+				String objectID = xmlProperties.getElementsByTagName(type).item(0).getFirstChild().getNodeValue();
+				if (objectID.equals(name)) {
 					id = Integer.toString(instances.getJSONObject(i).getInt("id"));
 				}
 			} catch (NullPointerException e){
@@ -239,6 +239,19 @@ class Utils {
 			}
 		}
 		return id;
+	}
+
+	String getProperties(String xml){
+		StringBuilder properties = new StringBuilder();
+
+		Document xmlProperties = loadXMLFromString(xml);
+		try {
+			properties.append(xmlProperties.getElementsByTagName("deviceList").item(0).getFirstChild().getNodeValue());
+		} catch (NullPointerException e){
+			e.printStackTrace();
+		}
+
+		return  properties.toString();
 	}
 
 	/**
